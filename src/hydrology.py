@@ -10,7 +10,6 @@ import networkx as nx
 from scipy import interpolate
 import shapely.geometry as geom
 import numpy as np
-#from shapely.geometry import asLineString
 from shapely.geometry import LineString
 from multiprocessing import Process, Pipe, Queue
 from tqdm import trange
@@ -21,7 +20,9 @@ from rasterio.transform import Affine
 import DataModel
 import HydrologyFunctions
 import Math
+import time
 
+_startTime = time.time()
 
 # Get inputs
 
@@ -92,6 +93,14 @@ parser.add_argument(
     metavar='1000',
     required=True
 )
+parser.add_argument(
+    '-c',
+    '--num-cities',
+    help="The number of cities to generate",
+    dest="numCities",
+    metavar=5,
+    required=False
+)
 args = parser.parse_args()
 
 outputDir = args.outputDir + '/'
@@ -111,7 +120,7 @@ globalseed=4314
 ## Hydrology Parameters
 
 # Number of river mouths
-N_majorRivers=10
+N_majorRivers=2
 
 # Branching Parameters
 Ps = 0.3 #0.05 ## probability of symetric branch
@@ -321,6 +330,7 @@ plt.savefig(outputDir + '8-river-flow-terrain.png')
 print('Generating terrain primitives...')
 Ts = DataModel.Terrain(hydrology, cells, num_points)
 
+
 # Generate river paths
 print('Interpolating river paths...')
 for node in hydrology.allMouthNodes():
@@ -484,6 +494,58 @@ for t in Ts.allTs():
     print(f'\tPrimitives computed: {progressCounter} out of {numTs} \r', end='')  # use display(f) if you encounter performance issues
 print()
 
+
+# Try manipulating terrain primitives
+#selectedCenter = Ts.allTs()[0]
+#for prim in Ts.allTs():
+#    if prim.elevation < 100:
+        #prim.elevation = 800
+#        selectedCenter = prim
+#        break
+#radius = 1000
+#cityPoints = Ts.query_ball_point(selectedCenter.position, radius)
+#print("Number of city points: " + str(len(cityPoints)))
+#for prim in cityPoints:
+#    if prim.elevation < 100:
+#        prim.elevation = 800
+
+
+
+
+occupiedSpots = list()
+
+highestRiverBed = max([node.elevation for node in hydrology.allNodes()])
+highestRidgeElevation = maxq = max([q.elevation for q in cells.allQs() if q is not None])
+
+
+print("Generating cities")
+def GenerateCity(radius, minElevation, maxElevation):
+    magicRadiusNumber = highestRidgeElevation / 834
+    radius = radius * magicRadiusNumber
+    primitives = Ts.allTs()
+    centerIndex = random.randint(0, len(primitives) - 1)
+    while primitives[centerIndex].elevation >= maxElevation: #makes sure that the centerIndex is under maxElevation
+        #todo max iterations to prevent locking program
+        centerIndex = random.randint(0, len(primitives) - 1)
+    
+    selectedCenter = primitives[centerIndex]
+    cityPoints = Ts.query_ball_point(selectedCenter.position, radius)
+    
+    for prim in cityPoints:
+        
+        rndNum = random.randint(1, 100)
+        if rndNum >= 80: # Accept point with 80% probability
+            continue
+        if prim.elevation >= minElevation and prim.elevation <= maxElevation:
+            prim.elevation = highestRidgeElevation + 1200 #todo remove
+
+
+numCities = int(args.numCities)
+for i in range(1, numCities + 1):
+    print("Generating city " + str(i))
+    GenerateCity(4000, 5000, 7500)
+
+
 # DEBUG
 print('Generating terrain primitives image...')
 fig = plt.figure(figsize=(16,16))
@@ -507,14 +569,16 @@ maxq = max([q.elevation for q in cells.allQs() if q is not None])
 print(f'Highest ridge elevation: {maxq}')
 oceanFloor = 0 - 0.25 * maxq / 0.75
 
-imgOut = np.full((outputResolution,outputResolution), oceanFloor,dtype=np.single)
+#imgOut = np.full((outputResolution,outputResolution), oceanFloor,dtype=np.single)
+imgOut = np.zeros((outputResolution,outputResolution),dtype=np.double)
 
 def TerrainFunction(prePoint):
     point = [int(prePoint[0] * (shore.realShape[0] / outputResolution)),int(prePoint[1] * (shore.realShape[1] / outputResolution))]
     
     # if imgray[point[1]][point[0]]==0: This is why a new data model was implemented
     if not shore.isOnLand(point):
-        return oceanFloor
+        return 0
+        #return oceanFloor
 
     # Gets and computes influence and elevation values for nearby terrain primitives
     ts = Ts.query_ball_point(point,radius) # Gets all terrain primitives within a radius of the point
@@ -593,9 +657,11 @@ def subroutine(conn, q):
     #print(f'Thread ID: {conn.recv()}')
     threadID = conn.recv()
     for i in range(threadID, outputResolution, numProcs):
-        arr = np.full(outputResolution, oceanFloor,dtype=np.single)
+        arr = np.zeros(outputResolution,dtype=np.double)
+        #arr = np.full(outputResolution, oceanFloor,dtype=np.single)
         for j in range(outputResolution):
-            arr[j] = max(oceanFloor,TerrainFunction((j,i)))
+            arr[j] = max(0,TerrainFunction((j,i)))
+            #arr[j] = max(oceanFloor,TerrainFunction((j,i)))
         try:
             q.put((i,arr.tobytes()))
         except:
@@ -617,7 +683,7 @@ for p in range(numProcs):
     pipes[p][0].send(p)
 for i in trange(outputResolution):
     data = dataQueue.get()
-    imgOut[data[0]] = np.frombuffer(data[1],dtype=np.single)
+    imgOut[data[0]] = np.frombuffer(data[1],dtype=np.double)
 
     if outputCounter > 50:
         plt.clf()
@@ -636,8 +702,18 @@ plt.imshow(imgOut, cmap=plt.get_cmap('terrain'))
 plt.colorbar()
 plt.tight_layout()                                # DEBUG
 plt.savefig(outputDir + 'out-color.png')
+plt.gray()
+#plt.savefig(outputDir + 'out-gray.png')
 
-imgOut[imgOut==oceanFloor] = -5000.0 # For actual heightmap output, set 'ocean' to the nodata value
+imgOut[imgOut==oceanFloor] = 0 # For actual heightmap output, set 'ocean' to zero
+
+immtt = np.array(imgOut)
+normalizedImg = immtt.copy()
+cv.normalize(immtt,  normalizedImg, 0, 255, cv.NORM_MINMAX)
+normalizedImg = normalizedImg.astype('uint8')
+cv.imwrite(outputDir + "out.png",normalizedImg)
+
+#imgOut[imgOut==oceanFloor] = -5000.0 # For actual heightmap output, set 'ocean' to the nodata value
 imgOut = np.flipud(imgOut) # Adjust to GeoTIFF coordinate system
 
 projection = '+proj=ortho +lat_0=-55.377 +lon_0=-67.765' # Adjust lat_o and lon_0 for location
@@ -653,8 +729,13 @@ new_dataset = rasterio.open(
     dtype=imgOut.dtype,
     crs=projection,
     transform=transform,
-    nodata=-5000.0
+    nodata=-5000
 )
 new_dataset.write(imgOut, 1)
 print(new_dataset.meta)
 new_dataset.close()
+
+_endTime = time.time()
+
+elapsedTime = _endTime - _startTime
+print("Execution time: ", elapsedTime, " seconds")
