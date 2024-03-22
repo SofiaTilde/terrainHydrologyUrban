@@ -518,9 +518,12 @@ highestRiverBed = max([node.elevation for node in hydrology.allNodes()])
 highestRidgeElevation = maxq = max([q.elevation for q in cells.allQs() if q is not None])
 
 
+# ---------------------- Inserted Code Begin ------------------------------------
+cityPointsGlobal = list()
 print("Generating cities")
 def GenerateCity(radius, minElevation, maxElevation):
-    magicRadiusNumber = highestRidgeElevation / 834
+    global cityPointsGlobal
+    magicRadiusNumber = highestRidgeElevation / 834 #todo fix
     radius = radius * magicRadiusNumber
     primitives = Ts.allTs()
     centerIndex = random.randint(0, len(primitives) - 1)
@@ -537,13 +540,30 @@ def GenerateCity(radius, minElevation, maxElevation):
         if rndNum >= 80: # Accept point with 80% probability
             continue
         if prim.elevation >= minElevation and prim.elevation <= maxElevation:
-            prim.elevation = highestRidgeElevation + 1200 #todo remove
+            #(x, y) = prim.position
+            #print("X:", x, "|Y:", y)
+            cityPointsGlobal.append(prim)
+            #prim.elevation = highestRidgeElevation + 1200 #debug
 
 
 numCities = int(args.numCities)
 for i in range(1, numCities + 1):
     print("Generating city " + str(i))
-    GenerateCity(4000, 5000, 7500)
+    GenerateCity(radius=4000, minElevation=5000, maxElevation=7500)
+
+print("Generating city points image with", len(cityPointsGlobal), "points...")
+fig = plt.figure(figsize=(16, 16))
+#myAx = fig.add_subplot(111)
+plt.imshow(shore.img, extent=imStretch)
+eleLambda = lambda a : a.elevation / highestRidgeElevation
+plt.scatter(*zip(*[t.position for t in cityPointsGlobal]), c=list(map(eleLambda, cityPointsGlobal)), cmap=plt.get_cmap('terrain'), s=8, lw=0,marker="s")
+
+plt.gray()
+plt.axis('off')
+plt.tight_layout()
+plt.savefig(outputDir + "city-primitives.png", dpi=500, bbox_inches='tight', pad_inches = 0)
+plt.axis('on')
+# ---------------------- Inserted Code End ------------------------------------
 
 
 # DEBUG
@@ -698,12 +718,14 @@ for p in range(numProcs):
     pipes[p][0].close()
 
 plt.clf()
-plt.imshow(imgOut, cmap=plt.get_cmap('terrain'))
+plt.imshow(imgOut, cmap=plt.get_cmap('terrain'), zorder=1)
 plt.colorbar()
-plt.tight_layout()                                # DEBUG
+#eleLambda = lambda a : highestRidgeElevation
+#plt.scatter(*zip(*[t.position for t in cityPointsGlobal]), zorder=2, c=list(map(eleLambda, cityPointsGlobal)), cmap=plt.get_cmap('terrain'), s=5, lw=0)
+plt.tight_layout()
+
 plt.savefig(outputDir + 'out-color.png')
-plt.gray()
-#plt.savefig(outputDir + 'out-gray.png')
+
 
 imgOut[imgOut==oceanFloor] = 0 # For actual heightmap output, set 'ocean' to zero
 
@@ -738,4 +760,4 @@ new_dataset.close()
 _endTime = time.time()
 
 elapsedTime = _endTime - _startTime
-print("Execution time: ", elapsedTime, " seconds")
+print("Execution time:", elapsedTime, "seconds")
