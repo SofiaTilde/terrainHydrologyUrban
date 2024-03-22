@@ -532,6 +532,7 @@ def GenerateCity(radius, minElevation, maxElevation):
         centerIndex = random.randint(0, len(primitives) - 1)
     
     selectedCenter = primitives[centerIndex]
+    (centerX, centerY) = selectedCenter.position
     cityPoints = Ts.query_ball_point(selectedCenter.position, radius)
     
     for prim in cityPoints:
@@ -542,6 +543,9 @@ def GenerateCity(radius, minElevation, maxElevation):
         if prim.elevation >= minElevation and prim.elevation <= maxElevation:
             #(x, y) = prim.position
             #print("X:", x, "|Y:", y)
+            (x, y) = prim.position
+            deltaX = abs(x - centerX)
+            deltaY = abs(y - centerY)
             cityPointsGlobal.append(prim)
             #prim.elevation = highestRidgeElevation + 1200 #debug
 
