@@ -316,9 +316,6 @@ nx.draw(hydrology.graph,positions,node_size=10,labels=labels,width=weights)
 plt.tight_layout()                                # DEBUG
 plt.savefig(outputDir + '7-river-flow.png', dpi=100)
 
-
-# DEBUG Same thing, but over imgvoronoi instead of the map
-
 plt.figure(num=None, figsize=(16, 16), dpi=80)
 plt.imshow(imgRiverHeights, plt.get_cmap('terrain'), extent=imStretch)
 nx.draw(hydrology.graph,positions,node_size=60,labels=labels,width=weights)
@@ -424,6 +421,24 @@ for node in hydrology.allNodes():
 plt.tight_layout()                                # DEBUG
 plt.savefig(outputDir + '9-interpolatedRiverCellNetwork.png', dpi=100)
 
+
+# Inserted code
+# generate a river map
+plt.figure(figsize=(20,20))
+for mouth in hydrology.allMouthNodes():
+    for leaf in hydrology.allLeaves(mouth.id):
+        x = [coord[0] for coord in leaf.rivers[0].coords]
+        y = [coord[1] for coord in leaf.rivers[0].coords]
+        width = 6 * 30 * leaf.flow / normalizer
+        plt.plot(x, y, linewidth=width, c='#888888', solid_capstyle='round')
+plt.imshow(shore.img, extent=imStretch,interpolation='none')
+plt.axis('off')
+plt.savefig(outputDir + 'out-rivers.png', dpi=100, bbox_inches='tight', pad_inches=0.0)
+plt.axis('on')
+# End of inserted code
+
+# DEBUG Same thing, but over imgvoronoi instead of the map
+
 # Calculate elevations of terrain primitives
 print('Calculating terrain primitive elevations...')
 progressCounter = 0
@@ -518,7 +533,7 @@ highestRiverBed = max([node.elevation for node in hydrology.allNodes()])
 highestRidgeElevation = maxq = max([q.elevation for q in cells.allQs() if q is not None])
 
 
-print("Generating cities")
+print("Generating cities...")
 def GenerateCity(radius, minElevation, maxElevation):
     magicRadiusNumber = highestRidgeElevation / 834
     radius = radius * magicRadiusNumber
@@ -542,9 +557,10 @@ def GenerateCity(radius, minElevation, maxElevation):
 
 numCities = int(args.numCities)
 for i in range(1, numCities + 1):
-    print("Generating city " + str(i))
+    #print("Generating city " + str(i))
+    print(f'\tGenerating city: {str(i)} of {numCities}\r', end='')
     GenerateCity(4000, 5000, 7500)
-
+print()
 
 # DEBUG
 print('Generating terrain primitives image...')
@@ -675,7 +691,6 @@ def subroutine(conn, q):
 dataQueue = Queue()
 pipes = []
 processes = []
-outputCounter = 0
 for p in range(numProcs):
     pipes.append(Pipe())
     processes.append(Process(target=subroutine, args=(pipes[p][1],dataQueue)))
@@ -684,15 +699,6 @@ for p in range(numProcs):
 for i in trange(outputResolution):
     data = dataQueue.get()
     imgOut[data[0]] = np.frombuffer(data[1],dtype=np.double)
-
-    if outputCounter > 50:
-        plt.clf()
-        plt.imshow(imgOut, cmap=plt.get_cmap('terrain'))
-        plt.colorbar()
-        plt.tight_layout()                                # DEBUG
-        plt.savefig(outputDir + 'out-color.png')
-        outputCounter = 0
-    outputCounter += 1
 for p in range(numProcs):
     processes[p].join()
     pipes[p][0].close()

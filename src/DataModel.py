@@ -472,7 +472,7 @@ class TerrainHoneycomb:
             regionIdxes = [self.vor.regions.index(bound) for bound in self.vor.regions if iv in bound]
             nodeIdxes = [list(self.vor.point_region).index(regionIndex) for regionIndex in regionIdxes]
             self.qs.append(Q(self.vor.vertices[iv],nodeIdxes, iv))
-            print(f'\tCreating ridge primitive {iv} of {len(self.vor.vertices)}\r', end='')
+            print(f'\tCreating ridge primitive {iv + 1} of {len(self.vor.vertices)}\r', end='')
         print()
 
         self.cellsRidges = { }
@@ -519,7 +519,7 @@ class TerrainHoneycomb:
             ridges += [(self.qs[vert],) for vert in verts if self.qs[vert] is not None]
             # ridges includes vertices that are not part of a ridge (but only vertices on land)
             self.cellsRidges[n] = ridges
-            print(f'\tOrganizing ridges for cell {n} of {len(hydrology)}\r', end='')
+            print(f'\tOrganizing ridges for cell {n + 1} of {len(hydrology)}\r', end='')
         print()
     def vor_region_id(self, node: int) -> int:
         """Returns the index of the *voronoi region*
@@ -718,7 +718,7 @@ class Terrain:
             self.cellTs[n] = cellTs
             self.tList += cellTs
             
-            print(f'\tPrimitives created: {n} of {len(hydrology)} \r', end='')  # use display(f) if you encounter performance issues
+            print(f'\tPrimitives created: {n + 1} of {len(hydrology)} \r', end='')  # use display(f) if you encounter performance issues
         print()
 
         allpoints_list = [[t.position[0],t.position[1]] for t in self.allTs()]
