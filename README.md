@@ -16,7 +16,7 @@ The approach described in Genevaux et al is an ontogenetic approach that is mean
 
 ### Input
 
-The program requires three images as inputs. They should all be the same resolution.
+The program requires three images as inputs. They should all be the same resolution and square.
 
 1. The gamma, or shoreline, should be a black-and-white image (though the actual color model does not matter). Full white `ffffff` represents land, and full black `000000` represents ocean. The program does not currently support inland seas or lakes.
 1. The river slope map is a grayscale image (though the actual color model does not matter). This map indicates the slope of rivers. Lighter values represent steeper slopes, and darker values represent more level slopes.
