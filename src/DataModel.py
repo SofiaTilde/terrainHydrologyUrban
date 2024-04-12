@@ -717,7 +717,6 @@ class Terrain:
             cellTs = [T(p,n) for p in points_filtered]
             self.cellTs[n] = cellTs
             self.tList += cellTs
-            
             print(f'\tPrimitives created: {n + 1} of {len(hydrology)} \r', end='')  # use display(f) if you encounter performance issues
         print()
 

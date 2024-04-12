@@ -14,6 +14,7 @@ from tqdm import trange
 import math
 import rasterio
 from rasterio.transform import Affine
+from PIL import Image
 
 import DataModel
 import HydrologyFunctions
@@ -40,7 +41,7 @@ riverPointsY = []
 riverPointsWidth = []
 
 def Generate_river_map(hydrology, normalizer):
-    plt.figure(figsize=(20,20))
+    plt.figure(figsize = (20,20))
     global riverPointsX
     global riverPointsY
     global riverPointsWidth
@@ -50,13 +51,13 @@ def Generate_river_map(hydrology, normalizer):
             x = [coord[0] for coord in leaf.rivers[0].coords]
             y = [coord[1] for coord in leaf.rivers[0].coords]
             width = 6 * 30 * leaf.flow / normalizer
-            plt.plot(x, y, linewidth=width, c='#888888', solid_capstyle='round')
-            riverPointsX += x
-            riverPointsY += y
-            riverPointsWidth += [width]
-    plt.imshow(shore, extent=imStretch, interpolation='none')
+            plt.plot(x, y, linewidth = width, c = '#888888', solid_capstyle = 'round')
+            riverPointsX +=  x
+            riverPointsY +=  y
+            riverPointsWidth +=  [width]
+    plt.imshow(shore, extent = imStretch, interpolation = 'none')
     plt.axis('off')
-    plt.savefig(outputDir + 'out-rivers.png', dpi=100, bbox_inches='tight', pad_inches=0.0)
+    plt.savefig(outputDir + 'out-rivers.png', dpi = 100, bbox_inches = 'tight', pad_inches = 0.0)
     plt.axis('on')
 
 def AcceptProbabilityFunction(radius, delta):
@@ -77,7 +78,25 @@ def Accept(radius, primPos, centerPos):
     deltaX = abs(primX - centerX)
     deltaY = abs(primY - centerY)
     deltaR = math.sqrt(math.pow(deltaX, 2) + math.pow(deltaY, 2))
-    return random.random() <= AcceptProbabilityFunction(radius, deltaR)
+    return random.random() <=  AcceptProbabilityFunction(radius, deltaR)
+
+def IsRiver(primPos, picSize, pix, size):
+    (primX, primY) = primPos
+    scale = picSize / size
+    picX = math.floor(primX * scale)
+    picY = math.floor(primY * scale)
+    if picX > 1539:
+        print(f'x: {picX}, y: {picY}, picSize: {picSize}, size: {size}')
+    if picY > 1539:
+        print(f'x: {picX}, y: {picY}, picSize: {picSize}, size: {size}')
+    (r, g, b, a) = pix[picX, picY]
+    #print(f'r: {r}, g: {g}, b: {b}, a: {a}')
+    if r == 0:
+        return False
+    elif r == 255:
+        return False
+    else:
+        return True
 
 cityPointsGlobal = list()
 cityPointsAll = list()
@@ -91,33 +110,34 @@ def GenerateCity(Ts, radius, minElevation, maxElevation):
     radius = radius * inputResolution
     primitives = Ts.allTs()
     centerIndex = random.randint(0, len(primitives) - 1)
-    while primitives[centerIndex].elevation >= maxElevation: #makes sure that the centerIndex is under maxElevation
+    while primitives[centerIndex].elevation >=  maxElevation: #makes sure that the centerIndex is under maxElevation
         #todo max iterations to prevent locking program
         centerIndex = random.randint(0, len(primitives) - 1)
     
     selectedCenter = primitives[centerIndex]
     (centerX, centerY) = selectedCenter.position
     cityPoints = Ts.query_ball_point(selectedCenter.position, radius)
-    #print(f'ci: {centerIndex}, x: {centerX}, y: {centerY}')
+    im = Image.open(outputDir + 'out-rivers.png')
+    pix = im.load()
+    picSize = max(im.size)
+    size = 381640 #todo fix actual size (how?)
     
     for prim in cityPoints:
-        
         #rndNum = random.randint(1, 100)
-        #if rndNum >= 80: # Accept point with 80% probability
+        #if rndNum > =  80: # Accept point with 80% probability
         #    continue
+        cityPointsAll.append(prim)
         if Accept(radius, prim.position, selectedCenter.position) is not True:
-            # Add even to reject image
-            cityPointsAll.append(prim)
             continue
-        
-        if prim.elevation >= minElevation and prim.elevation <= maxElevation:
+        if IsRiver(prim.position, picSize, pix, size):
+            continue
+        if prim.elevation >=  minElevation and prim.elevation <=  maxElevation:
             #(x, y) = prim.position
             #print("X:", x, "|Y:", y)
             (x, y) = prim.position
             deltaX = abs(x - centerX)
             deltaY = abs(y - centerY)
             cityPointsGlobal.append(prim)
-            cityPointsAll.append(prim)
             #prim.elevation = highestRidgeElevation + 1200 #debug
 
 def GenerateCities(Ts, numCities):
@@ -128,35 +148,35 @@ def GenerateCities(Ts, numCities):
 
     for i in range(1, numCities + 1):
         random.seed(math.pow(globalseed, i + 1))
-        print(f'\tGenerating city: {str(i)} of {numCities}\r', end='')
-        GenerateCity(Ts, radius=120, minElevation=300, maxElevation=75000)
+        print(f'\tGenerating city: {str(i)} of {numCities}\r', end = '')
+        GenerateCity(Ts, radius = 120, minElevation = 300, maxElevation = 75000)
     print()
     print("Generating city points image with", len(cityPointsGlobal), "points...")
-    fig = plt.figure(figsize=(16, 16))
+    fig = plt.figure(figsize = (16, 16))
     #myAx = fig.add_subplot(111)
-    plt.imshow(shore, extent=imStretch)
+    plt.imshow(shore, extent = imStretch)
     #eleLambda = lambda a : a.elevation / highestRidgeElevation
     #eleLambda = lambda a : 0.2
 
-    plt.scatter(*zip(*[t.position for t in cityPointsGlobal]), c='#888888', s=8, lw=0,marker="s")
+    plt.scatter(*zip(*[t.position for t in cityPointsGlobal]), c = '#888888', s = 8, lw = 0,marker = "s")
 
     plt.gray()
     plt.axis('off')
     plt.tight_layout()
-    plt.savefig(outputDir + "city-primitives.png", dpi=500, bbox_inches='tight', pad_inches = 0)
+    plt.savefig(outputDir + "city-primitives.png", dpi = 500, bbox_inches = 'tight', pad_inches = 0)
     plt.axis('on')
 
     # Create reject image
-    figRej = plt.figure(figsize=(16, 16))
+    figRej = plt.figure(figsize = (16, 16))
     #myAx = fig.add_subplot(111)
-    plt.imshow(shore, extent=imStretch)
+    plt.imshow(shore, extent = imStretch)
     #eleLambda = lambda a : a.elevation / highestRidgeElevation
     #eleLambda = lambda a : 0.2
 
-    plt.scatter(*zip(*[t.position for t in cityPointsAll]), c='#888888', s=8, lw=0,marker="s")
+    plt.scatter(*zip(*[t.position for t in cityPointsAll]), c = '#888888', s = 8, lw = 0,marker = "s")
 
     plt.gray()
     plt.axis('off')
     plt.tight_layout()
-    plt.savefig(outputDir + "city-primitives-reject.png", dpi=500, bbox_inches='tight', pad_inches = 0)
+    plt.savefig(outputDir + "city-primitives-reject.png", dpi = 500, bbox_inches = 'tight', pad_inches = 0)
     plt.axis('on')
