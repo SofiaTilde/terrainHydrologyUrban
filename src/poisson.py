@@ -20,7 +20,7 @@ def min_dist_squared(points, point):
     return np.min(np.einsum('ij,ij->i',diff,diff))
 
 class PoissonGenerator:
-    def __init__(self, repeatPattern, first_point_zero):
+    def __init__(self, repeatPattern, first_point_zero, seed):
         self.first_point_zero = first_point_zero
         self.repeatPattern = repeatPattern
         self.num_perms = (3 ** 2) if self.repeatPattern else 1
@@ -30,6 +30,7 @@ class PoissonGenerator:
         
         
         self.random_point = random_point_square
+        np.random.seed(seed)
 
 
     def first_point(self):

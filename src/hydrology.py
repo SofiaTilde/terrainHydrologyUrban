@@ -22,7 +22,7 @@ import HydrologyFunctions
 import Math
 import time
 
-from UrbanFunctions import Generate_river_map, GenerateCities, SetResolution
+from UrbanFunctions import Generate_river_map, GenerateCities, InitUrbanFunctions
 
 _startTime = time.time()
 
@@ -116,8 +116,6 @@ inputTerrain = args.inputTerrain
 inputRiverSlope = args.inputRiverSlope
 resolution = float(args.resolution) # meters per pixel length
 
-SetResolution(resolution)
-
 ## Random Number Generation
 globalseed=4314
 
@@ -173,7 +171,6 @@ terrainSlope = DataModel.RasterData(inputTerrain, resolution)
 
 riverSlope = DataModel.RasterData(inputRiverSlope, resolution)
 
-
 # Generate river mouths
 
 hydrology = DataModel.HydrologyNetwork()
@@ -196,6 +193,9 @@ plt.imshow(imgMouthDots)
 plt.tight_layout()                                # DEBUG
 plt.savefig(outputDir + '3-riverMouths.png')
 
+# Inserted code start
+InitUrbanFunctions(resolution, shore.img, imStretch, outputDir, globalseed)
+# Inserted code end
 
 # Generate river nodes
 
@@ -329,7 +329,7 @@ plt.savefig(outputDir + '8-river-flow-terrain.png')
 # Terrain pattern
 
 print('Generating terrain primitives...')
-Ts = DataModel.Terrain(hydrology, cells, num_points)
+Ts = DataModel.Terrain(hydrology, cells, num_points, globalseed)
 
 
 # Generate river paths
@@ -427,7 +427,7 @@ plt.savefig(outputDir + '9-interpolatedRiverCellNetwork.png', dpi=100)
 
 
 # Inserted code
-Generate_river_map(hydrology, normalizer, shore.img, imStretch, outputDir)
+Generate_river_map(hydrology, normalizer)
 # End of inserted code
 
 # DEBUG Same thing, but over imgvoronoi instead of the map
@@ -511,7 +511,7 @@ highestRiverBed = max([node.elevation for node in hydrology.allNodes()])
 highestRidgeElevation = maxq = max([q.elevation for q in cells.allQs() if q is not None])
 
 numCities = int(args.numCities)
-GenerateCities(outputDir, imStretch, shore, Ts, numCities)
+GenerateCities(Ts, numCities)
 
 
 # ---------------------- Inserted Code End ------------------------------------

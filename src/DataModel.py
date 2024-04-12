@@ -693,7 +693,7 @@ class Terrain:
     :param num_points: (Roughly) the number of points in each cell
     :type num_points: int
     """
-    def __init__(self, hydrology, cells, num_points):
+    def __init__(self, hydrology, cells, num_points, seed):
         self.cellTs = { }
         self.tList = [ ]
         
@@ -706,7 +706,7 @@ class Terrain:
         num_dim = 2                 # 1, 2, 3 dimensional version
         num_rotations = 1           # number of rotations of pattern to check against
         
-        poisson_generator = PoissonGenerator( repeatPattern, first_point_zero)
+        poisson_generator = PoissonGenerator( repeatPattern, first_point_zero, seed)
         points = poisson_generator.find_point_set(num_points, num_iterations, iterations_per_point, num_rotations)
         for n in range(len(hydrology)):
             xllim, xulim, yllim, yulim = cells.boundingBox(n)

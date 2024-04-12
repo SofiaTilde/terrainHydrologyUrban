@@ -20,17 +20,26 @@ import HydrologyFunctions
 import Math
 import time
 
-inputResolution = 0
-def SetResolution(res):
+#inputResolution = 0
+def InitUrbanFunctions(res, shore1, imStretch1, outputDir1, seed):
     global inputResolution
+    global shore
+    global imStretch
+    global outputDir
+    global globalseed
     inputResolution = res
+    shore = shore1
+    imStretch = imStretch1
+    outputDir = outputDir1
+    globalseed = seed
+    random.seed(seed)
 
 #todo make cities not generate on river
 riverPointsX = []
 riverPointsY = []
 riverPointsWidth = []
 
-def Generate_river_map(hydrology, normalizer, shore, imStretch, outputDir):
+def Generate_river_map(hydrology, normalizer):
     plt.figure(figsize=(20,20))
     global riverPointsX
     global riverPointsY
@@ -78,6 +87,7 @@ def GenerateCity(Ts, radius, minElevation, maxElevation):
     global cityPointsGlobal
     global cityPointsAll
     global inputResolution
+
     radius = radius * inputResolution
     primitives = Ts.allTs()
     centerIndex = random.randint(0, len(primitives) - 1)
@@ -88,6 +98,7 @@ def GenerateCity(Ts, radius, minElevation, maxElevation):
     selectedCenter = primitives[centerIndex]
     (centerX, centerY) = selectedCenter.position
     cityPoints = Ts.query_ball_point(selectedCenter.position, radius)
+    #print(f'ci: {centerIndex}, x: {centerX}, y: {centerY}')
     
     for prim in cityPoints:
         
@@ -109,19 +120,21 @@ def GenerateCity(Ts, radius, minElevation, maxElevation):
             cityPointsAll.append(prim)
             #prim.elevation = highestRidgeElevation + 1200 #debug
 
-def GenerateCities(outputDir, imStretch, shore, Ts, numCities):
+def GenerateCities(Ts, numCities):
     print("Generating cities...")
     global cityPointsGlobal
     global cityPointsAll
+    global globalseed
 
     for i in range(1, numCities + 1):
+        random.seed(math.pow(globalseed, i + 1))
         print(f'\tGenerating city: {str(i)} of {numCities}\r', end='')
         GenerateCity(Ts, radius=120, minElevation=300, maxElevation=75000)
     print()
     print("Generating city points image with", len(cityPointsGlobal), "points...")
     fig = plt.figure(figsize=(16, 16))
     #myAx = fig.add_subplot(111)
-    plt.imshow(shore.img, extent=imStretch)
+    plt.imshow(shore, extent=imStretch)
     #eleLambda = lambda a : a.elevation / highestRidgeElevation
     #eleLambda = lambda a : 0.2
 
@@ -136,7 +149,7 @@ def GenerateCities(outputDir, imStretch, shore, Ts, numCities):
     # Create reject image
     figRej = plt.figure(figsize=(16, 16))
     #myAx = fig.add_subplot(111)
-    plt.imshow(shore.img, extent=imStretch)
+    plt.imshow(shore, extent=imStretch)
     #eleLambda = lambda a : a.elevation / highestRidgeElevation
     #eleLambda = lambda a : 0.2
 
