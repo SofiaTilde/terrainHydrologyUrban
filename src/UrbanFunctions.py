@@ -20,15 +20,32 @@ import HydrologyFunctions
 import Math
 import time
 
+inputResolution = 0
+def SetResolution(res):
+    global inputResolution
+    inputResolution = res
+
+#todo make cities not generate on river
+riverPointsX = []
+riverPointsY = []
+riverPointsWidth = []
+
 def Generate_river_map(hydrology, normalizer, shore, imStretch, outputDir):
     plt.figure(figsize=(20,20))
+    global riverPointsX
+    global riverPointsY
+    global riverPointsWidth
+    
     for mouth in hydrology.allMouthNodes():
         for leaf in hydrology.allLeaves(mouth.id):
             x = [coord[0] for coord in leaf.rivers[0].coords]
             y = [coord[1] for coord in leaf.rivers[0].coords]
             width = 6 * 30 * leaf.flow / normalizer
             plt.plot(x, y, linewidth=width, c='#888888', solid_capstyle='round')
-    plt.imshow(shore, extent=imStretch,interpolation='none')
+            riverPointsX += x
+            riverPointsY += y
+            riverPointsWidth += [width]
+    plt.imshow(shore, extent=imStretch, interpolation='none')
     plt.axis('off')
     plt.savefig(outputDir + 'out-rivers.png', dpi=100, bbox_inches='tight', pad_inches=0.0)
     plt.axis('on')
@@ -57,11 +74,11 @@ cityPointsGlobal = list()
 cityPointsAll = list()
 
 
-def GenerateCity(Ts, highestRidgeElevation, radius, minElevation, maxElevation):
+def GenerateCity(Ts, radius, minElevation, maxElevation):
     global cityPointsGlobal
     global cityPointsAll
-    magicRadiusNumber = highestRidgeElevation / 834 #todo fix
-    radius = radius * magicRadiusNumber
+    global inputResolution
+    radius = radius * inputResolution
     primitives = Ts.allTs()
     centerIndex = random.randint(0, len(primitives) - 1)
     while primitives[centerIndex].elevation >= maxElevation: #makes sure that the centerIndex is under maxElevation
@@ -92,14 +109,14 @@ def GenerateCity(Ts, highestRidgeElevation, radius, minElevation, maxElevation):
             cityPointsAll.append(prim)
             #prim.elevation = highestRidgeElevation + 1200 #debug
 
-def GenerateCities(outputDir, imStretch, shore, highestRidgeElevation, Ts, numCities):
+def GenerateCities(outputDir, imStretch, shore, Ts, numCities):
     print("Generating cities...")
     global cityPointsGlobal
     global cityPointsAll
 
     for i in range(1, numCities + 1):
         print(f'\tGenerating city: {str(i)} of {numCities}\r', end='')
-        GenerateCity(Ts, highestRidgeElevation, radius=4000, minElevation=300, maxElevation=75000)
+        GenerateCity(Ts, radius=120, minElevation=300, maxElevation=75000)
     print()
     print("Generating city points image with", len(cityPointsGlobal), "points...")
     fig = plt.figure(figsize=(16, 16))

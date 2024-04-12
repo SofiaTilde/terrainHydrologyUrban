@@ -22,7 +22,7 @@ import HydrologyFunctions
 import Math
 import time
 
-from UrbanFunctions import Generate_river_map, GenerateCities
+from UrbanFunctions import Generate_river_map, GenerateCities, SetResolution
 
 _startTime = time.time()
 
@@ -115,6 +115,8 @@ inputDomain = args.inputDomain
 inputTerrain = args.inputTerrain
 inputRiverSlope = args.inputRiverSlope
 resolution = float(args.resolution) # meters per pixel length
+
+SetResolution(resolution)
 
 ## Random Number Generation
 globalseed=4314
@@ -509,7 +511,7 @@ highestRiverBed = max([node.elevation for node in hydrology.allNodes()])
 highestRidgeElevation = maxq = max([q.elevation for q in cells.allQs() if q is not None])
 
 numCities = int(args.numCities)
-GenerateCities(outputDir, imStretch, shore, highestRidgeElevation, Ts, numCities)
+GenerateCities(outputDir, imStretch, shore, Ts, numCities)
 
 
 # ---------------------- Inserted Code End ------------------------------------
