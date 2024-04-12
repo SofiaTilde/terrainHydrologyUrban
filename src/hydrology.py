@@ -22,6 +22,8 @@ import HydrologyFunctions
 import Math
 import time
 
+from UrbanFunctions import Generate_river_map, GenerateCities
+
 _startTime = time.time()
 
 # Get inputs
@@ -423,18 +425,7 @@ plt.savefig(outputDir + '9-interpolatedRiverCellNetwork.png', dpi=100)
 
 
 # Inserted code
-# generate a river map
-plt.figure(figsize=(20,20))
-for mouth in hydrology.allMouthNodes():
-    for leaf in hydrology.allLeaves(mouth.id):
-        x = [coord[0] for coord in leaf.rivers[0].coords]
-        y = [coord[1] for coord in leaf.rivers[0].coords]
-        width = 6 * 30 * leaf.flow / normalizer
-        plt.plot(x, y, linewidth=width, c='#888888', solid_capstyle='round')
-plt.imshow(shore.img, extent=imStretch,interpolation='none')
-plt.axis('off')
-plt.savefig(outputDir + 'out-rivers.png', dpi=100, bbox_inches='tight', pad_inches=0.0)
-plt.axis('on')
+Generate_river_map(hydrology, normalizer, shore.img, imStretch, outputDir)
 # End of inserted code
 
 # DEBUG Same thing, but over imgvoronoi instead of the map
@@ -510,129 +501,16 @@ for t in Ts.allTs():
 print()
 
 
-# Try manipulating terrain primitives
-#selectedCenter = Ts.allTs()[0]
-#for prim in Ts.allTs():
-#    if prim.elevation < 100:
-        #prim.elevation = 800
-#        selectedCenter = prim
-#        break
-#radius = 1000
-#cityPoints = Ts.query_ball_point(selectedCenter.position, radius)
-#print("Number of city points: " + str(len(cityPoints)))
-#for prim in cityPoints:
-#    if prim.elevation < 100:
-#        prim.elevation = 800
-
-
-
+# ---------------------- Inserted Code Begin ------------------------------------
 
 occupiedSpots = list()
 
 highestRiverBed = max([node.elevation for node in hydrology.allNodes()])
 highestRidgeElevation = maxq = max([q.elevation for q in cells.allQs() if q is not None])
 
-
-
-# ---------------------- Inserted Code Begin ------------------------------------
-def AcceptProbabilityFunction(radius, delta):
-    x = delta / radius
-    #https://mycurvefit.com/
-    #   0       1          
-    #   1       0          
-    #   0.4     0.9        
-    #   0.7     0.1        
-    #y = -0.007567003 + (1 + 0.007567003)/(1 + math.pow((x/0.5319382), 7.737233))
-    y = 1.004701771/(1 + math.pow((x / 0.4259953), 6.281081)) - 0.004701771
-    #y = 1.007567003 / (1 + math.pow(x / 0.5319382, 7.737233)) - 0.007567003
-    return y
-
-def Accept(radius, primPos, centerPos):
-    (primX, primY) = primPos
-    (centerX, centerY) = centerPos
-    deltaX = abs(primX - centerX)
-    deltaY = abs(primY - centerY)
-    deltaR = math.sqrt(math.pow(deltaX, 2) + math.pow(deltaY, 2))
-    return random.random() <= AcceptProbabilityFunction(radius, deltaR)
-        
-    
-
-cityPointsGlobal = list()
-cityPointsAll = list()
-
-print("Generating cities...")
-def GenerateCity(radius, minElevation, maxElevation):
-    global cityPointsGlobal
-    global cityPointsAll
-    magicRadiusNumber = highestRidgeElevation / 834 #todo fix
-    radius = radius * magicRadiusNumber
-    primitives = Ts.allTs()
-    centerIndex = random.randint(0, len(primitives) - 1)
-    while primitives[centerIndex].elevation >= maxElevation: #makes sure that the centerIndex is under maxElevation
-        #todo max iterations to prevent locking program
-        centerIndex = random.randint(0, len(primitives) - 1)
-    
-    selectedCenter = primitives[centerIndex]
-    (centerX, centerY) = selectedCenter.position
-    cityPoints = Ts.query_ball_point(selectedCenter.position, radius)
-    
-    for prim in cityPoints:
-        
-        #rndNum = random.randint(1, 100)
-        #if rndNum >= 80: # Accept point with 80% probability
-        #    continue
-        if Accept(radius, prim.position, selectedCenter.position) is not True:
-            # Add even to reject image
-            cityPointsAll.append(prim)
-            continue
-        
-        if prim.elevation >= minElevation and prim.elevation <= maxElevation:
-            #(x, y) = prim.position
-            #print("X:", x, "|Y:", y)
-            (x, y) = prim.position
-            deltaX = abs(x - centerX)
-            deltaY = abs(y - centerY)
-            cityPointsGlobal.append(prim)
-            cityPointsAll.append(prim)
-            #prim.elevation = highestRidgeElevation + 1200 #debug
-
-
 numCities = int(args.numCities)
-for i in range(1, numCities + 1):
+GenerateCities(outputDir, imStretch, shore, highestRidgeElevation, Ts, numCities)
 
-    print(f'\tGenerating city: {str(i)} of {numCities}\r', end='')
-    #GenerateCity(radius=4000, minElevation=5000, maxElevation=7500)
-    GenerateCity(radius=4000, minElevation=300, maxElevation=75000)
-print()
-print("Generating city points image with", len(cityPointsGlobal), "points...")
-fig = plt.figure(figsize=(16, 16))
-#myAx = fig.add_subplot(111)
-plt.imshow(shore.img, extent=imStretch)
-#eleLambda = lambda a : a.elevation / highestRidgeElevation
-#eleLambda = lambda a : 0.2
-
-plt.scatter(*zip(*[t.position for t in cityPointsGlobal]), c='#888888', cmap=plt.get_cmap('terrain'), s=8, lw=0,marker="s")
-
-plt.gray()
-plt.axis('off')
-plt.tight_layout()
-plt.savefig(outputDir + "city-primitives.png", dpi=500, bbox_inches='tight', pad_inches = 0)
-plt.axis('on')
-
-# Create reject image
-figRej = plt.figure(figsize=(16, 16))
-#myAx = fig.add_subplot(111)
-plt.imshow(shore.img, extent=imStretch)
-#eleLambda = lambda a : a.elevation / highestRidgeElevation
-#eleLambda = lambda a : 0.2
-
-plt.scatter(*zip(*[t.position for t in cityPointsAll]), c='#888888', cmap=plt.get_cmap('terrain'), s=8, lw=0,marker="s")
-
-plt.gray()
-plt.axis('off')
-plt.tight_layout()
-plt.savefig(outputDir + "city-primitives-reject.png", dpi=500, bbox_inches='tight', pad_inches = 0)
-plt.axis('on')
 
 # ---------------------- Inserted Code End ------------------------------------
 
@@ -816,7 +694,7 @@ new_dataset = rasterio.open(
     nodata=-5000
 )
 new_dataset.write(imgOut, 1)
-print(new_dataset.meta)
+#print(new_dataset.meta)
 new_dataset.close()
 
 _endTime = time.time()
