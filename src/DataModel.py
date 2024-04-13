@@ -5,6 +5,7 @@ from scipy.spatial import cKDTree
 from scipy.spatial import Voronoi
 from poisson import PoissonGenerator
 from PIL import Image
+import UrbanFunctions
 
 import typing
 
@@ -64,6 +65,7 @@ class ShoreModel:
         self.imgray = cv.cvtColor(self.img, cv.COLOR_BGR2GRAY) # a black-and-white version of the input image
         self.rasterShape = self.imgray.shape
         self.realShape = (self.imgray.shape[0] * self.resolution, self.imgray.shape[1] * self.resolution)
+        UrbanFunctions.SetSize(int(max(self.realShape)))
         ret, thresh = cv.threshold(self.imgray, 127, 255, 0)
         contours, hierarchy = cv.findContours(thresh, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
         test = cv.cvtColor(thresh, cv.COLOR_GRAY2BGR) # not sure what this line does or why it exists
