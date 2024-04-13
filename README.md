@@ -40,11 +40,11 @@ As this program is in the early stages of development, it produces a number of c
 
 ### Example
 
-```
+```bash
 python3 src/hydrology.py -g example/in/gamma.png -s example/in/riverslope.png -t example/in/terrainslope.png -o example/out/ -ri 87.5 -p 50 -ro 1000
 ```
 
-```
+```bash
 python3 src/hydrology.py -g example/in/gamma.png -s example/in/riverslope.png -t example/in/terrainslope.png -o example/out/ -ri 280 -p 50 -ro 1000 -c 5
 ```
 
@@ -64,7 +64,7 @@ To generate pdf documentation, you will need the LaTeX toolchain.
 
 ## Dependencies and citations
 
-Poisson.py is a modified version of the Possion.py in this repository:
+Poisson.py is a modified version of the Poisson.py in this repository:
 
 > [https://github.com/bartwronski/PoissonSamplingGenerator](PoissonSamplingGenerator)
 
