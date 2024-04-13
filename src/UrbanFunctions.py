@@ -15,7 +15,7 @@ import math
 import rasterio
 from rasterio.transform import Affine
 from PIL import Image
-#todo get a real size for buildings and river width
+
 def InitUrbanFunctions(res, shore1, imStretch1, outputDir1, seed):
     global inputResolution
     global shore
@@ -56,7 +56,7 @@ def Generate_river_map(hydrology, normalizer):
     plt.figure(11)
     plt.axis('off')
     plt.imshow(shore, extent = imStretch, interpolation = 'none')
-    plt.savefig(outputDir + 'out-rivers2.png', dpi = fig2.dpi, bbox_inches = 'tight', pad_inches = 0.0)
+    plt.savefig(outputDir + 'out-rivers-city-mask.png', dpi = fig2.dpi, bbox_inches = 'tight', pad_inches = 0.0)
     plt.axis('on')
 
 def AcceptProbabilityFunction(radius, delta):
@@ -112,7 +112,7 @@ def GenerateCity(Ts, radius, minElevation, maxElevation):
     selectedCenter = primitives[centerIndex]
     (centerX, centerY) = selectedCenter.position
     cityPoints = Ts.query_ball_point(selectedCenter.position, radius)
-    im = Image.open(outputDir + 'out-rivers2.png')
+    im = Image.open(outputDir + 'out-rivers-city-mask.png')
     pix = im.load()
     picSize = max(im.size)
     
@@ -143,18 +143,19 @@ def GenerateCities(Ts, numCities):
         GenerateCity(Ts, radius = 120, minElevation = 300, maxElevation = 75000)
     print()
     print("Generating city points image with", len(cityPointsGlobal), "points...")
-    plt.figure(figsize = (16, 16))
+    fig = plt.figure(figsize = (16, 16))
     #myAx = fig.add_subplot(111)
     plt.imshow(shore, extent = imStretch)
     #eleLambda = lambda a : a.elevation / highestRidgeElevation
     #eleLambda = lambda a : 0.2
     
-    plt.scatter(*zip(*[t.position for t in cityPointsGlobal]), c = '#888888', s = 8, lw = 0, marker = "s")
+    buildingSize=(72./fig.dpi)**2
+    plt.scatter(*zip(*[t.position for t in cityPointsGlobal]), c = '#888888', s = buildingSize, lw = 0, marker = "s")
 
     plt.gray()
     plt.axis('off')
     plt.tight_layout()
-    plt.savefig(outputDir + "city-primitives.png", dpi = 500, bbox_inches = 'tight', pad_inches = 0)
+    plt.savefig(outputDir + "city-primitives.png", dpi = fig.dpi, bbox_inches = 'tight', pad_inches = 0)
     plt.axis('on')
 
     # Create reject image
@@ -164,10 +165,10 @@ def GenerateCities(Ts, numCities):
     #eleLambda = lambda a : a.elevation / highestRidgeElevation
     #eleLambda = lambda a : 0.2
 
-    plt.scatter(*zip(*[t.position for t in cityPointsAll]), c = '#888888', s = 8, lw = 0, marker = "s")
+    plt.scatter(*zip(*[t.position for t in cityPointsAll]), c = '#888888', s = buildingSize, lw = 0, marker = "s")
 
     plt.gray()
     plt.axis('off')
     plt.tight_layout()
-    plt.savefig(outputDir + "city-primitives-reject.png", dpi = 500, bbox_inches = 'tight', pad_inches = 0)
+    plt.savefig(outputDir + "city-primitives-reject.png", dpi = fig.dpi, bbox_inches = 'tight', pad_inches = 0)
     plt.axis('on')
