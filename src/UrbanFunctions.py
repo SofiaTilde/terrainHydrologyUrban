@@ -1,20 +1,20 @@
-import argparse
 import random
 import matplotlib.pyplot as plt
-import cv2 as cv
-import numpy as np
-from scipy.spatial import voronoi_plot_2d
-import networkx as nx
-from scipy import interpolate
-import shapely.geometry as geom
-import numpy as np
-from shapely.geometry import LineString
-from multiprocessing import Process, Pipe, Queue
-from tqdm import trange
 import math
-import rasterio
-from rasterio.transform import Affine
 from PIL import Image
+
+#Initialize global variables
+cityPointsGlobal = list()
+cityPointsAll = list()
+picScale = 0
+inputResolution = 0
+outputDir = ""
+globalseed = 0
+size = 0
+#Images that aren't initialized before the function
+#shore
+#imStretch
+#pix
 
 def InitUrbanFunctions(res, shore1, imStretch1, outputDir1, seed):
     global inputResolution
@@ -45,6 +45,7 @@ def Generate_river_map(hydrology, normalizer):
             plt.figure(10)
             plt.plot(x, y, linewidth = width, c = '#888888', solid_capstyle = 'round')
             plt.figure(11)
+            #todo change 2 depending on resolution
             plt.plot(x, y, linewidth = width * 2, c = '#888888', solid_capstyle = 'round')
 
     plt.figure(10)
@@ -78,29 +79,22 @@ def Accept(radius, primPos, centerPos):
     deltaR = math.sqrt(math.pow(deltaX, 2) + math.pow(deltaY, 2))
     return random.random() <=  AcceptProbabilityFunction(radius, deltaR)
 
-def IsRiver(primPos, picSize, pix):
-    global size
+def IsRiver(primPos):
     (primX, primY) = primPos
-    scale = picSize / size
-    picX = round(primX * scale) - 1
-    picY = round(primY * scale) - 1
-    if picX > (picSize - 1) or picY > (picSize - 1):
-        #this should never happen
-        #print(f'x: {primX}, y: {primY}, px: {picX}, py: {picY}, picSize: {picSize}, size: {size}')
-        return True
+    #primX goes from 1 to n, but picX goes from 0 to (n-1)
+    picX = round(primX * picScale) - 1
+    picY = round(primY * picScale) - 1
     (r, _, _, _) = pix[picX, picY]
     if r == 0 or r == 255:
         return False
     else:
         return True
 
-cityPointsGlobal = list()
-cityPointsAll = list()
-
 def GenerateCity(Ts, radius, minElevation, maxElevation):
     global cityPointsGlobal
     global cityPointsAll
-    global inputResolution
+    global pix
+    global picScale
 
     radius = radius * inputResolution
     primitives = Ts.allTs()
@@ -112,15 +106,17 @@ def GenerateCity(Ts, radius, minElevation, maxElevation):
     selectedCenter = primitives[centerIndex]
     (centerX, centerY) = selectedCenter.position
     cityPoints = Ts.query_ball_point(selectedCenter.position, radius)
+
+    #for IsRiver function
     im = Image.open(outputDir + 'out-rivers-city-mask.png')
     pix = im.load()
-    picSize = max(im.size)
+    picScale = max(im.size) / size
     
     for prim in cityPoints:
         cityPointsAll.append(prim)
         if Accept(radius, prim.position, selectedCenter.position) is not True:
             continue
-        if IsRiver(prim.position, picSize, pix):
+        if IsRiver(prim.position):
             continue
         if prim.elevation >=  minElevation and prim.elevation <=  maxElevation:
             #(x, y) = prim.position
@@ -135,7 +131,6 @@ def GenerateCities(Ts, numCities):
     print("Generating cities...")
     global cityPointsGlobal
     global cityPointsAll
-    global globalseed
 
     for i in range(1, numCities + 1):
         random.seed(math.pow(globalseed, i + 1))

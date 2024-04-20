@@ -14,8 +14,6 @@ from shapely.geometry import LineString
 from multiprocessing import Process, Pipe, Queue
 from tqdm import trange
 import math
-import rasterio
-from rasterio.transform import Affine
 
 import DataModel
 import HydrologyFunctions
