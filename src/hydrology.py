@@ -101,6 +101,15 @@ parser.add_argument(
     metavar = 5,
     required = False
 )
+parser.add_argument(
+    '-x',
+    '--seed',
+    help = "The global seed",
+    dest = "seed",
+    metavar=4314,
+    required=False,
+    default=4314
+)
 args = parser.parse_args()
 
 outputDir = args.outputDir + '/'
@@ -115,7 +124,9 @@ inputRiverSlope = args.inputRiverSlope
 resolution = float(args.resolution) # meters per pixel length
 
 ## Random Number Generation
-globalseed = 4314
+globalseed = int(args.seed)
+
+print(f'Seed: {globalseed}')
 
 ## Hydrology Parameters
 
