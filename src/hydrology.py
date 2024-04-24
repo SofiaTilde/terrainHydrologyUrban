@@ -126,7 +126,7 @@ resolution = float(args.resolution) # meters per pixel length
 ## Random Number Generation
 globalseed = int(args.seed)
 
-print(f'Seed: {globalseed}')
+#print(f'Seed: {globalseed}')
 
 ## Hydrology Parameters
 
