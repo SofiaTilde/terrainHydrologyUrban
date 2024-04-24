@@ -144,7 +144,8 @@ def GenerateCities(Ts, numCities):
     #eleLambda = lambda a : a.elevation / highestRidgeElevation
     #eleLambda = lambda a : 0.2
     
-    buildingSize=(72./fig.dpi)**2
+    pixelsPerBuilding = 3
+    buildingSize = (pixelsPerBuilding*(72./fig.dpi))**2
     plt.scatter(*zip(*[t.position for t in cityPointsGlobal]), c = '#888888', s = buildingSize, lw = 0, marker = "s")
 
     plt.gray()
