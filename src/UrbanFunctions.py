@@ -45,8 +45,12 @@ def Generate_river_map(hydrology, normalizer):
             plt.figure(10)
             plt.plot(x, y, linewidth = width, c = '#888888', solid_capstyle = 'round')
             plt.figure(11)
-            #todo change 2 depending on resolution
-            plt.plot(x, y, linewidth = width * 2, c = '#888888', solid_capstyle = 'round')
+            #when ri 280 then mult=2
+            #when ri 87.5 then mult=1
+            mult = 1
+            if inputResolution > 87.5:
+                mult = (0.0051948052 * inputResolution) + 0.545454545
+            plt.plot(x, y, linewidth = width * mult, c = '#888888', solid_capstyle = 'round')
 
     plt.figure(10)
     plt.axis('off')
@@ -99,9 +103,14 @@ def GenerateCity(Ts, radius, minElevation, maxElevation):
     radius = radius * inputResolution
     primitives = Ts.allTs()
     centerIndex = random.randint(0, len(primitives) - 1)
+    iter = 0
+    maxIter = 100000
     while primitives[centerIndex].elevation >=  maxElevation: #makes sure that the centerIndex is under maxElevation
-        #todo max iterations to prevent locking program
         centerIndex = random.randint(0, len(primitives) - 1)
+        if iter >= maxIter:
+            print(f'Failed to generate city')
+            return
+        iter += 1
     
     selectedCenter = primitives[centerIndex]
     (centerX, centerY) = selectedCenter.position
