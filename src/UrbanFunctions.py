@@ -125,7 +125,7 @@ def GenerateCity(Ts, radius, minElevation, maxElevation):
         cityPointsAll.append(prim)
         if Accept(radius, prim.position, selectedCenter.position) is not True:
             continue
-        if IsRiver(prim.position):
+        if IsRiver(prim.position): # If primitive is on top of a river
             continue
         if prim.elevation >=  minElevation and prim.elevation <=  maxElevation:
             #(x, y) = prim.position
