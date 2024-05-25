@@ -53,24 +53,28 @@ python3 src/hydrology.py -g example/in/gamma.png -s example/in/riverslope.png -t
 <!-- 
 UrbanFunctions: pixelsPerBuilding = 1
 -->
-<!-- ca 11 min -->
+<!-- ca 11 min 644 seconds -->
 ```bash
 python3 src/hydrology.py -g sverige/in/sverige-gamma.png -s sverige/in/sverige-slope.png -t sverige/in/sverige-slope.png -o sverige/out/sverige/ -ri 280 -p 50 -ro 1000 -c 20 --seed 4318
 ```
 <!-- 
 UrbanFunctions: pixelsPerBuilding = 3
 -->
-<!-- ca 1,5 min -->
+<!-- ca 1,5 min 82 seconds -->
 ```bash
 python3 src/hydrology.py -g sverige/in/lidingö-gamma.png -s sverige/in/lidingö-slope.png -t sverige/in/lidingö-slope.png -o sverige/out/lidingö/ -ri 280 -p 50 -ro 1000 -c 7 --seed 4318
 ```
-<!-- ca 3 min -->
+<!-- ca 3 min 184 seconds -->
 ```bash
 python3 src/hydrology.py -g sverige/in/lovön-gamma.png -s sverige/in/lovön-slope.png -t sverige/in/lovön-slope.png -o sverige/out/lovön/ -ri 280 -p 50 -ro 1000 -c 7 --seed 4318
 ```
-<!-- ca 4 min -->
+<!-- ca 4 min 263 seconds -->
 ```bash
 python3 src/hydrology.py -g sverige/in/skeppsholmen-gamma.png -s sverige/in/skeppsholmen-slope.png -t sverige/in/skeppsholmen-slope.png -o sverige/out/skeppsholmen/ -ri 280 -p 50 -ro 1000 -c 7 --seed 4318
+```
+<!-- ca 1 min 64 seconds -->
+```bash
+python3 src/hydrology.py -g fictional/atlantis-gamma.png -s fictional/atlantis-gamma.png -t fictional/atlantis-gamma.png -o fictional/out/atlantis/ -ri 280 -p 50 -ro 1000 -c 7 --seed 4318
 ```
 <!-- 
 UrbanFunctions: pixelsPerBuilding = 3
